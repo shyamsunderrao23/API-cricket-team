@@ -4,6 +4,7 @@ const path = require("path");
 const { open } = require("sqlite");
 const sqlite3 = require("sqlite3");
 const app = express();
+app.use(express.json());
 
 const dbPath = path.join(__dirname, "cricketTeam.db");
 
@@ -25,6 +26,7 @@ const initializeDBAndServer = async () => {
 };
 
 initializeDBAndServer();
+
 const convertDbObjectToResponseObject = (dbObject) => {
   return {
     playerId: dbObject.player_id,
@@ -34,13 +36,63 @@ const convertDbObjectToResponseObject = (dbObject) => {
   };
 };
 
-app.get(" /players/", async (request, response) => {
-  const getallPalyers = `
-    SELECT * FROM cricket_team 
-    `;
-  const playerArray = await db.all(getallPalyers);
+app.get("/players/", async (request, response) => {
+  const getAllPalyers = `
+    SELECT * FROM cricket_team`;
+  const allPalyers = await db.all(getAllPalyers);
   response.send(
-    playerArray.map((eachPlayer) => convertDbObjectToResponseObject(eachPlayer))
+    allPalyers.map((eachPlayer) => convertDbObjectToResponseObject(eachPlayer))
   );
+});
+
+//post player API
+
+app.post("/players/", async (request, response) => {
+  const playerId = request.body;
+  const { playerName, jerseyNumber, role } = playerId;
+  const addPlayer = `
+    INSERT INTO 
+    cricket_team (playerName,jerseyNumber,role);
+    VALUES (
+        '${PlayerName}',
+        ${jerseyNumber},
+        '${role}'
+    );
+    `;
+  const addPlayerID = await db.run(addPlayer);
+  response.send("Player Added to Team");
+});
+
+//get palyer API
+
+app.get("/players/:playerId/", async (request, response) => {
+  const { playerId } = request.params;
+  const getPlayerIDQuery = `
+        SELECT 
+         * 
+        FROM 
+        cricket_team
+        WHERE 
+        playerId = ${playerId};`;
+  const Player = await db.get(getPlayerIDQuery);
+  response.send(convertDbObjectToResponseObject(Player));
+});
+
+//update the playerId
+app.get("/players/:playerId/", async (request, repsonse) => {
+  const { PlayerId } = request.params;
+  const PlayerDetails = request.body;
+  const { playerName, jerseyNumber, role } = PlayerDetails;
+  const updatePlayerId = `
+        UPDATE 
+        cricket_team
+        SET 
+        playerName = '${playerName}',
+        jerseyNumber = '${jerseyNumber}',
+        role = '${role}'
+        WHERE 
+        player_id = ${playerId};`;
+  await db.run(updatePlayerId);
+  response.send("Player Details Updated");
 });
 module.exports = app;
